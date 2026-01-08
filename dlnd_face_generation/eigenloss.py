@@ -68,7 +68,7 @@ class Eigenloss:
         sorted_indices = torch.argsort(eigenvalues, descending=True)
         self.eigenvectors = eigenvectors[:, sorted_indices[:self.n_components]]
     
-    def compute_loss(self, inputs: torch.Tensor) -> torch.Tensor:
+    def compute_loss(self, inputs: torch.Tensor, method: str = 'l2residual') -> torch.Tensor:
         if self.computed_mean is None or self.eigenvectors is None:
             raise ValueError("Eigenloss model has not been trained yet.")
         
@@ -82,9 +82,13 @@ class Eigenloss:
         # Project onto eigenvectors
         projections = torch.matmul(centered_inputs, self.eigenvectors)
         # Reconstruct the inputs
-        reconstructed = torch.matmul(projections, self.eigenvectors.T) + self.computed_mean
+        reconstructed = torch.matmul(projections, self.eigenvectors.T)
         # Compute reconstruction error
-        loss = self._cosine_distance(inputs, reconstructed)
+        if method == 'l2residual':
+            residual = centered_inputs - reconstructed
+            loss = torch.norm(residual, dim=1).mean()
+        elif method == 'cosine':
+            loss = self._cosine_distance(centered_inputs, reconstructed)
         return loss
     
     def _cosine_distance(self, a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
