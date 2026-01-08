@@ -89,6 +89,8 @@ class Eigenloss:
             loss = torch.norm(residual, dim=1).mean()
         elif method == 'cosine':
             loss = self._cosine_distance(centered_inputs, reconstructed)
+        else:
+            raise ValueError(f"Unknown method '{method}' for computing eigenloss.")
         return loss
     
     def _cosine_distance(self, a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
